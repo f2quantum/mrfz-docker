@@ -1,0 +1,56 @@
+name: mrfz-maa
+services:
+    redroid:
+        privileged: true
+        volumes:
+            - ~/redroid11:/data
+        ports:
+            - 5555:5555
+        container_name: redroid11
+        image: redroid/redroid:11.0.0-latest
+        command: 
+            - androidboot.redroid_width=1920    
+            - androidboot.redroid_height=1080   
+            - androidboot.redroid_gpu_mode=host 
+            - androidboot.redroid_dpi=480
+            - androidboot.redroid_fps=120 
+            - androidboot.use_memfd=true
+        networks:
+            redroid_net:
+                ipv4_address: 172.88.1.1
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                      - driver: "nvidia"
+                        count: "all"
+                        capabilities: ["gpu"]
+    maa-vnc-client:
+        depends_on:
+            - redroid
+        ports:
+            - 5900:5900
+            - 40022:22
+            - 43389:3389
+        environment:
+            - PASSWD=root
+            - SIZE=1024x768
+            - REDROID_IPPORT=172.88.1.1:5555
+        image: mrfz-docker
+        networks:
+            redroid_net:
+                ipv4_address: 172.88.1.2
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                      - driver: "nvidia"
+                        count: "all"
+                        capabilities: ["gpu"]
+networks:
+  redroid_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.88.0.0/16
+        
